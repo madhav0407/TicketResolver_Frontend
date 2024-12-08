@@ -15,7 +15,7 @@
         dest: ./
 
     - name: Pull the Docker images specifed in docker-compose
-      shell: 
+      shell:
         cmd: docker compose pull
         chdir: ./
 
