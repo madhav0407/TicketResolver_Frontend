@@ -11,7 +11,6 @@ services:
       MYSQL_ROOT_PASSWORD: Abcd@1234
       MYSQL_PASSWORD: Abcd@1234
       MYSQL_USER: spe-project
-      MYSQL_ROOT_HOST: spe-project
     ports:
       - "3306:3306"
     volumes:
@@ -24,19 +23,18 @@ services:
     networks:
       - spe-network
     environment:
-      # MYSQL_URL: jdbc:mysql://spe-project:3307/ticketresolver?createDatabaseIfNotExist=true&swapsieDevops?useSSL=false&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      # MYSQL_NAME: spe-project
-      # MYSQL_PASSWORD: Abcd@1234
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:3306/ticketresolver?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: spe-project
       SPRING_DATASOURCE_PASSWORD: Abcd@1234
     ports:
       - "8081:8081"
+    volumes:
+      - logs-volume:/logs  # Mount the logs directory for sharing with Logstash
     depends_on:
       - mysql_db
 
   ticketresolver_frontend:
-    image: sarthakharne2262/ticketresolver_frontend:latest
+    image: madhavsood04/ticketresolver_frontend:latest
     container_name: ticketresolver_frontend
     restart: always
     networks:
@@ -45,11 +43,50 @@ services:
       - "3000:3000"
     depends_on:
       - ticketresolver_backend
-    
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    container_name: elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"  # Disable security for simplicity
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - spe-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.10.2
+    container_name: logstash
+    networks:
+      - spe-network
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - logs-volume:/logs  # Mount logs directory from backend
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.2
+    container_name: kibana
+    networks:
+      - spe-network
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
 networks:
   spe-network:
     driver: bridge
 
 volumes:
   mysql-data:
+    driver: local
+  logs-volume:
     driver: local
