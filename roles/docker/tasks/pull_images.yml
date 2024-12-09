@@ -6,7 +6,7 @@
 
 - name: Pull frontend image
   docker_image:
-    name: madhavsood04/ticketresolver-frontend:latest
+    name: madhavsood04/ticketresolver_frontend:latest
     source: pull
 
 - name: Pull mysql image
