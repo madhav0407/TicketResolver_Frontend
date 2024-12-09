@@ -1,13 +1,3 @@
 ---
-- name: Copy compose file to remote host
-  template:
-    src: docker-compose.yml
-    dest: ./docker-compose.yml
-
-- name: Pull the Docker images specifed in docker-compose
-  shell:
-    cmd: docker compose pull
-    chdir: ./
-
-- name: run docker-compose file
-  command: docker compose up -d --build
+- include_tasks: pull_images.yml
+- include_tasks: run_compose.yml
